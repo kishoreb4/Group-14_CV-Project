@@ -17,7 +17,7 @@ import os
 # Function to download model from Google Drive
 @st.cache_resource
 def download_model_from_drive():
-    model_path = "/content/drive/MyDrive/Colab Notebooks/SEM03-Assignments/Computer Vision/Project/11/unet_model.h5"
+    model_path = "unet_model.h5"
     if not os.path.exists(model_path):
         # Replace with your Google Drive file ID
         url = "https://drive.google.com/uc?id=1RVligiHWDZ7alytcK5YDtCd0mE-ch9qg"  # e.g., "https://drive.google.com/uc?id=1aBcDeFgHiJkLmN"
