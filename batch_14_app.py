@@ -97,8 +97,9 @@ def main():
 
     if uploaded_image is not None:
         try:
-            # Read the uploaded file and open as an image
-            image = Image.open(io.BytesIO(uploaded_image.read()))
+            # Read and reset the file pointer for the image
+            image_data = uploaded_image.read()
+            image = Image.open(io.BytesIO(image_data))
             st.image(image, caption="Uploaded Image", use_container_width=True)
         except Exception as e:
             st.error(f"Error loading image: {e}")
@@ -112,8 +113,17 @@ def main():
 
         if uploaded_mask is not None:
             try:
-                # Read the uploaded mask and open as an image
-                mask = Image.open(io.BytesIO(uploaded_mask.read())).convert('L')
+                # Read and debug the mask file
+                mask_data = uploaded_mask.read()
+                st.write(f"Uploaded mask size: {len(mask_data)} bytes")
+                if len(mask_data) < 100:  # Arbitrary threshold for suspiciously small files
+                    st.warning("Mask file is very small and may be invalid.")
+                
+                # Open the mask from bytes
+                mask_io = io.BytesIO(mask_data)
+                mask = Image.open(mask_io).convert('L')
+                
+                # Process the mask
                 mask = np.array(mask.resize((128, 128), Image.NEAREST))
                 mask = np.where(mask == 1, 1, 0).astype(np.float32)
                 mask = np.expand_dims(mask, axis=-1)
@@ -121,6 +131,7 @@ def main():
                 st.write(f"Intersection over Union (IoU): {iou:.4f}")
             except Exception as e:
                 st.error(f"Error loading mask: {e}")
+                st.write("Please ensure the mask is a valid PNG file.")
 
 if __name__ == "__main__":
     main()
