@@ -13,29 +13,40 @@ import cv2
 from PIL import Image
 import gdown
 import os
+import io
 
 # Function to download model from Google Drive
 @st.cache_resource
 def download_model_from_drive():
     model_path = "unet_model.h5"
-    if not os.path.exists(model_path):
-        # Replace with your Google Drive file ID
-        url = "https://drive.google.com/uc?id=1RVligiHWDZ7alytcK5YDtCd0mE-ch9qg"  # e.g., "https://drive.google.com/uc?id=1aBcDeFgHiJkLmN"
-        gdown.download(url, model_path, quiet=False)
-        st.write("Model downloaded from Google Drive.")
+    if not os.path.exists(model_path):       
+        url = "https://drive.google.com/uc?id=1RVligiHWDZ7alytcK5YDtCd0mE-ch9qg"  
+        try:
+            gdown.download(url, model_path, quiet=False)
+            st.success("Model downloaded successfully from Google Drive.")
+        except Exception as e:
+            st.error(f"Failed to download model: {e}")
+            return None
     else:
-        st.write("Model already exists locally.")
+        st.info("Model already exists locally.")
     return model_path
 
 # Load the trained model
 @st.cache_resource
 def load_model():
     model_path = download_model_from_drive()
-    model = tf.keras.models.load_model(
-        model_path,
-        custom_objects={"dice_loss": dice_loss, "iou_metric": iou_metric}
-    )
-    return model
+    if model_path is None or not os.path.exists(model_path):
+        st.error(f"Model file not found at {model_path}. Please check the Google Drive link.")
+        return None
+    try:
+        model = tf.keras.models.load_model(
+            model_path,
+            custom_objects={"dice_loss": dice_loss, "iou_metric": iou_metric}
+        )
+        return model
+    except Exception as e:
+        st.error(f"Failed to load model: {e}")
+        return None
 
 # Define Dice Loss
 def dice_loss(y_true, y_pred):
@@ -79,14 +90,19 @@ def main():
         model = load_model()
     
     if model is None:
-        st.stop()  # Halt execution if model loading fails
+        st.stop()
 
     uploaded_image = st.file_uploader("Upload an image (JPG, PNG)", type=["jpg", "png"])
     uploaded_mask = st.file_uploader("Upload ground truth mask (PNG, optional)", type=["png"])
 
     if uploaded_image is not None:
-        image = Image.open(uploaded_image)
-        st.image(image, caption="Uploaded Image", use_container_width=True)
+        try:
+            # Read the uploaded file and open as an image
+            image = Image.open(io.BytesIO(uploaded_image.read()))
+            st.image(image, caption="Uploaded Image", use_container_width=True)
+        except Exception as e:
+            st.error(f"Error loading image: {e}")
+            st.stop()
 
         with st.spinner("Predicting mask..."):
             processed_image = preprocess_image(image)
@@ -95,12 +111,16 @@ def main():
         st.image(prediction.squeeze(), caption="Predicted Mask", clamp=True, use_container_width=True)
 
         if uploaded_mask is not None:
-            mask = Image.open(uploaded_mask).convert('L')
-            mask = np.array(mask.resize((128, 128), Image.NEAREST))
-            mask = np.where(mask == 1, 1, 0).astype(np.float32)
-            mask = np.expand_dims(mask, axis=-1)
-            iou = calculate_iou(mask, prediction)
-            st.write(f"Intersection over Union (IoU): {iou:.4f}")
+            try:
+                # Read the uploaded mask and open as an image
+                mask = Image.open(io.BytesIO(uploaded_mask.read())).convert('L')
+                mask = np.array(mask.resize((128, 128), Image.NEAREST))
+                mask = np.where(mask == 1, 1, 0).astype(np.float32)
+                mask = np.expand_dims(mask, axis=-1)
+                iou = calculate_iou(mask, prediction)
+                st.write(f"Intersection over Union (IoU): {iou:.4f}")
+            except Exception as e:
+                st.error(f"Error loading mask: {e}")
 
 if __name__ == "__main__":
     main()
