@@ -77,20 +77,22 @@ def main():
     # Load the model
     with st.spinner("Loading model..."):
         model = load_model()
+    
+    if model is None:
+        st.stop()  # Halt execution if model loading fails
 
-    # File uploaders
     uploaded_image = st.file_uploader("Upload an image (JPG, PNG)", type=["jpg", "png"])
     uploaded_mask = st.file_uploader("Upload ground truth mask (PNG, optional)", type=["png"])
 
     if uploaded_image is not None:
         image = Image.open(uploaded_image)
-        st.image(image, caption="Uploaded Image", use_column_width=True)
+        st.image(image, caption="Uploaded Image", use_container_width=True)
 
         with st.spinner("Predicting mask..."):
             processed_image = preprocess_image(image)
             prediction = model.predict(processed_image)[0]
 
-        st.image(prediction.squeeze(), caption="Predicted Mask", clamp=True, use_column_width=True)
+        st.image(prediction.squeeze(), caption="Predicted Mask", clamp=True, use_container_width=True)
 
         if uploaded_mask is not None:
             mask = Image.open(uploaded_mask).convert('L')
