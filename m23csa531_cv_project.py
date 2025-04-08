@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """M23CSA531_CV-Project
-
 """
 
 from google.colab import drive
