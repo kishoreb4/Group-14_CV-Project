@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Batch-14-app
-
 """
 import streamlit as st
 import tensorflow as tf
