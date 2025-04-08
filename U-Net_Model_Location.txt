@@ -1,0 +1,4 @@
+As size of the model is 335MB, it can't uploaded to Github (File Size Limit is 25 MB). 
+So keep the U-Net Model at my Google drive at below location.
+
+https://drive.google.com/file/d/1RVligiHWDZ7alytcK5YDtCd0mE-ch9qg/view?usp=sharing
